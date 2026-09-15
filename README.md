@@ -122,8 +122,3 @@ n;ordenada;montagem_ms;busca_tel_ms;busca_nome_ms;remocao_ms;achouTel;achouNome;
 
 Cada medição é feita em uma **JVM nova**, para que uma execução não interfira na
 seguinte.
-
-## 5. Relatório
-
-O relatório com as análises matemática e empírica está em
-`relatorio/Relatorio_Trabalho1.pdf`.
