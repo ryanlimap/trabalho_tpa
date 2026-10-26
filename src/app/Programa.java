@@ -1,5 +1,7 @@
 package app;
 
+import arvorebinaria.ArvoreAVL;
+import arvorebinaria.ArvoreBinaria;
 import colecao.IColecao;
 import colecao.ListaEncadeada;
 
@@ -9,22 +11,48 @@ import java.io.IOException;
 import java.util.Scanner;
 
 /**
- * Programa de teste da biblioteca de listas.
+ * Programa de teste das bibliotecas de coleções.
  *
- * Mantém duas listas com as MESMAS instâncias de Contato: uma indexada por
+ * Mantém DUAS estruturas com as MESMAS instâncias de Contato: uma indexada por
  * nome e outra indexada por telefone. Nenhum contato é duplicado (as duas
- * listas guardam referências para o mesmo objeto).
+ * estruturas guardam referências para o mesmo objeto).
+ *
+ * A estrutura usada — lista não-ordenada, lista ordenada ou árvore binária — é
+ * escolhida pelo usuário ao iniciar o programa. Como todas implementam
+ * IColecao, o restante do programa não muda.
  */
 public class Programa {
 
-    private static IColecao<Contato> listaPorNome;
-    private static IColecao<Contato> listaPorTelefone;
+    private static IColecao<Contato> colecaoPorNome;
+    private static IColecao<Contato> colecaoPorTelefone;
+    /** Nome da estrutura escolhida, usado apenas nas mensagens na tela. */
+    private static String nomeEstrutura = "estruturas";
     private static final Scanner ENTRADA = new Scanner(System.in);
 
     public static void main(String[] args) {
-        boolean ordenada = perguntarSeOrdenada();
-        listaPorNome = new ListaEncadeada<>(new ComparadorContatoPorNome(), ordenada);
-        listaPorTelefone = new ListaEncadeada<>(new ComparadorContatoPorTelefone(), ordenada);
+        int estrutura = perguntarEstrutura();
+        switch (estrutura) {
+            case 2 -> {
+                colecaoPorNome = new ListaEncadeada<>(new ComparadorContatoPorNome(), true);
+                colecaoPorTelefone = new ListaEncadeada<>(new ComparadorContatoPorTelefone(), true);
+                nomeEstrutura = "listas ordenadas";
+            }
+            case 3 -> {
+                colecaoPorNome = new ArvoreBinaria<>(new ComparadorContatoPorNome());
+                colecaoPorTelefone = new ArvoreBinaria<>(new ComparadorContatoPorTelefone());
+                nomeEstrutura = "arvores binarias de busca";
+            }
+            case 4 -> {
+                colecaoPorNome = new ArvoreAVL<>(new ComparadorContatoPorNome());
+                colecaoPorTelefone = new ArvoreAVL<>(new ComparadorContatoPorTelefone());
+                nomeEstrutura = "arvores AVL";
+            }
+            default -> {
+                colecaoPorNome = new ListaEncadeada<>(new ComparadorContatoPorNome(), false);
+                colecaoPorTelefone = new ListaEncadeada<>(new ComparadorContatoPorTelefone(), false);
+                nomeEstrutura = "listas nao-ordenadas";
+            }
+        }
 
         int opcao;
         do {
@@ -47,10 +75,15 @@ public class Programa {
     // Menu
     // ------------------------------------------------------------------
 
-    private static boolean perguntarSeOrdenada() {
-        System.out.println("As listas devem ser ORDENADAS? (s/n)");
-        String r = ENTRADA.nextLine().trim().toLowerCase();
-        return r.startsWith("s");
+    private static int perguntarEstrutura() {
+        System.out.println("Qual estrutura deseja utilizar?");
+        System.out.println("1 - Lista encadeada NAO-ordenada");
+        System.out.println("2 - Lista encadeada ORDENADA");
+        System.out.println("3 - Arvore binaria de busca");
+        System.out.println("4 - Arvore AVL (binaria balanceada)");
+        System.out.print("Opcao: ");
+        int op = lerInteiro();
+        return (op >= 1 && op <= 4) ? op : 1;
     }
 
     private static void exibirMenu() {
@@ -106,11 +139,11 @@ public class Programa {
                 }
                 Contato c = new Contato(partes[0].trim(), partes[1].trim());
                 // regra de negocio: nao pode haver dois contatos com o mesmo telefone
-                if (verificar && listaPorTelefone.pesquisar(c) != null) {
+                if (verificar && colecaoPorTelefone.pesquisar(c) != null) {
                     continue;
                 }
-                listaPorNome.adicionar(c);
-                listaPorTelefone.adicionar(c);
+                colecaoPorNome.adicionar(c);
+                colecaoPorTelefone.adicionar(c);
                 lidos++;
             }
         } catch (IOException e) {
@@ -119,7 +152,7 @@ public class Programa {
         }
         long fim = System.nanoTime();
         System.out.println(lidos + " contatos carregados.");
-        System.out.println("Tempo total de leitura e montagem das listas: "
+        System.out.println("Tempo total de leitura e montagem das " + nomeEstrutura + ": "
                 + formatar(fim - inicio));
     }
 
@@ -134,13 +167,13 @@ public class Programa {
         String telefone = ENTRADA.nextLine().trim();
         Contato novo = new Contato(nome, telefone);
 
-        if (listaPorTelefone.pesquisar(novo) != null) {
+        if (colecaoPorTelefone.pesquisar(novo) != null) {
             System.out.println("Ja existe um contato com esse telefone. Insercao cancelada.");
             return;
         }
         long inicio = System.nanoTime();
-        listaPorNome.adicionar(novo);
-        listaPorTelefone.adicionar(novo);
+        colecaoPorNome.adicionar(novo);
+        colecaoPorTelefone.adicionar(novo);
         long fim = System.nanoTime();
         System.out.println("Contato adicionado. Tempo: " + formatar(fim - inicio));
     }
@@ -154,7 +187,7 @@ public class Programa {
         String nome = ENTRADA.nextLine().trim();
         Contato chave = new Contato(nome, "");
         long inicio = System.nanoTime();
-        Contato achado = listaPorNome.pesquisar(chave);
+        Contato achado = colecaoPorNome.pesquisar(chave);
         long fim = System.nanoTime();
         if (achado == null) {
             System.out.println("Contato nao encontrado.");
@@ -169,7 +202,7 @@ public class Programa {
         String telefone = ENTRADA.nextLine().trim();
         Contato chave = new Contato("", telefone);
         long inicio = System.nanoTime();
-        Contato achado = listaPorTelefone.pesquisar(chave);
+        Contato achado = colecaoPorTelefone.pesquisar(chave);
         long fim = System.nanoTime();
         if (achado == null) {
             System.out.println("Contato nao encontrado.");
@@ -188,9 +221,9 @@ public class Programa {
         String telefone = ENTRADA.nextLine().trim();
         Contato chave = new Contato("", telefone);
 
-        Contato alvo = listaPorTelefone.pesquisar(chave);
+        Contato alvo = colecaoPorTelefone.pesquisar(chave);
         long inicio = System.nanoTime();
-        boolean removido = listaPorTelefone.remover(chave);
+        boolean removido = colecaoPorTelefone.remover(chave);
         long fim = System.nanoTime();
         if (removido && alvo != null) {
             removerInstanciaDaListaPorNome(alvo);
@@ -213,18 +246,18 @@ public class Programa {
         ListaEncadeada<Contato> temporarios =
                 new ListaEncadeada<>(new ComparadorContatoPorNome(), false);
         while (true) {
-            Contato achado = listaPorNome.pesquisar(alvo);
+            Contato achado = colecaoPorNome.pesquisar(alvo);
             if (achado == null) {
                 break;
             }
-            listaPorNome.remover(achado);
+            colecaoPorNome.remover(achado);
             if (achado == alvo) {
                 break;
             }
             temporarios.adicionar(achado);
         }
         for (Contato c : temporarios) {
-            listaPorNome.adicionar(c);
+            colecaoPorNome.adicionar(c);
         }
     }
 
@@ -235,7 +268,7 @@ public class Programa {
     private static void alterarContato() {
         System.out.print("Nome do contato: ");
         String nome = ENTRADA.nextLine().trim();
-        Contato achado = listaPorNome.pesquisar(new Contato(nome, ""));
+        Contato achado = colecaoPorNome.pesquisar(new Contato(nome, ""));
         if (achado == null) {
             System.out.println("Contato nao encontrado.");
             return;
@@ -249,7 +282,7 @@ public class Programa {
         // Mesma regra de negocio da opcao "Adicionar": nao pode haver dois
         // contatos com o mesmo telefone. Se o novo telefone ja pertence a OUTRO
         // contato, a alteracao e cancelada.
-        Contato donoDoTelefone = listaPorTelefone.pesquisar(new Contato("", novoTelefone));
+        Contato donoDoTelefone = colecaoPorTelefone.pesquisar(new Contato("", novoTelefone));
         if (donoDoTelefone != null && donoDoTelefone != achado) {
             System.out.println("Ja existe outro contato com esse telefone ("
                     + donoDoTelefone.getNome() + "). Alteracao cancelada.");
@@ -259,11 +292,11 @@ public class Programa {
         // Como as chaves das listas mudam, o contato e removido e reinserido
         // para que a ordenacao continue valida.
         removerInstanciaDaListaPorNome(achado);
-        listaPorTelefone.remover(achado);
+        colecaoPorTelefone.remover(achado);
         achado.setNome(novoNome);
         achado.setTelefone(novoTelefone);
-        listaPorNome.adicionar(achado);
-        listaPorTelefone.adicionar(achado);
+        colecaoPorNome.adicionar(achado);
+        colecaoPorTelefone.adicionar(achado);
         System.out.println("Contato alterado: " + achado);
     }
 
@@ -272,7 +305,7 @@ public class Programa {
     // ------------------------------------------------------------------
 
     private static void sair() {
-        System.out.println("Total de contatos na agenda: " + listaPorNome.quantidadeNos());
+        System.out.println("Total de contatos na agenda: " + colecaoPorNome.quantidadeNos());
         System.out.println("Encerrando.");
     }
 

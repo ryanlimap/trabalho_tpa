@@ -1,0 +1,17 @@
+C:\Users\vanes\Downloads\trabalho2_arvores\trabalho2\src\app\Benchmark.java
+C:\Users\vanes\Downloads\trabalho2_arvores\trabalho2\src\app\ComparadorContador.java
+C:\Users\vanes\Downloads\trabalho2_arvores\trabalho2\src\app\ComparadorContatoPorNome.java
+C:\Users\vanes\Downloads\trabalho2_arvores\trabalho2\src\app\ComparadorContatoPorTelefone.java
+C:\Users\vanes\Downloads\trabalho2_arvores\trabalho2\src\app\ContagemOperacoes.java
+C:\Users\vanes\Downloads\trabalho2_arvores\trabalho2\src\app\Contato.java
+C:\Users\vanes\Downloads\trabalho2_arvores\trabalho2\src\app\GeradorArquivo.java
+C:\Users\vanes\Downloads\trabalho2_arvores\trabalho2\src\app\Programa.java
+C:\Users\vanes\Downloads\trabalho2_arvores\trabalho2\src\app\TesteArvore.java
+C:\Users\vanes\Downloads\trabalho2_arvores\trabalho2\src\app\TesteAVL.java
+C:\Users\vanes\Downloads\trabalho2_arvores\trabalho2\src\arvorebinaria\ArvoreAVL.java
+C:\Users\vanes\Downloads\trabalho2_arvores\trabalho2\src\arvorebinaria\ArvoreBinaria.java
+C:\Users\vanes\Downloads\trabalho2_arvores\trabalho2\src\arvorebinaria\ArvoreBinariaBase.java
+C:\Users\vanes\Downloads\trabalho2_arvores\trabalho2\src\arvorebinaria\NoArvore.java
+C:\Users\vanes\Downloads\trabalho2_arvores\trabalho2\src\colecao\IColecao.java
+C:\Users\vanes\Downloads\trabalho2_arvores\trabalho2\src\colecao\ListaEncadeada.java
+C:\Users\vanes\Downloads\trabalho2_arvores\trabalho2\src\colecao\No.java

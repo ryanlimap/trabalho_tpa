@@ -1,93 +1,106 @@
-# Trabalho 1 — Análise de complexidade em estruturas de listas
+# Trabalho 2 — Árvores Binárias e Análise de Complexidade
 
-Biblioteca de **lista encadeada genérica** em Java (com opção de ordenação via
-`Comparator`) e uma **agenda de contatos** que a utiliza, além dos programas
-usados na análise empírica de complexidade.
+Biblioteca de **árvore binária de busca genérica** em Java (especializando a classe
+`ArvoreBinariaBase` fornecida pelo professor), a agenda de contatos do Trabalho 1
+adaptada para usar listas **ou** árvores, e os programas usados na análise
+empírica de complexidade.
 
 Disciplina: Técnicas de Programação Avançada — IFES Campus Serra
 Professor: Victorio Albani de Carvalho
+Grupo: Lucas Ramos Pianissola, Ryan Lima Peçanha, Davi Alvarenga
+
+Inclui também a **árvore AVL**, que herda da árvore binária e sobrescreve
+`adicionar` e `remover` para manter a árvore balanceada.
 
 ---
 
 ## 1. Organização do código
 
 ```
-trabalho1/
+trabalho2/
 ├── README.md
 ├── src/
-│   ├── colecao/                      <- a BIBLIOTECA (não imprime nada)
-│   │   ├── IColecao.java             interface exigida pelo trabalho
-│   │   ├── No.java                   nó genérico (valor + próximo)
-│   │   └── ListaEncadeada.java       lista genérica, ordenada ou não
-│   └── app/                          <- programas que USAM a biblioteca
-│       ├── Contato.java              classe de domínio (nome, telefone)
+│   ├── colecao/                        <- reaproveitado do Trabalho 1
+│   │   ├── IColecao.java               interface comum (fornecida pelo professor)
+│   │   ├── No.java                     nó da lista encadeada
+│   │   └── ListaEncadeada.java         lista genérica, ordenada ou não
+│   ├── arvorebinaria/                  <- a BIBLIOTECA DE ÁRVORES (não imprime nada)
+│   │   ├── ArvoreBinariaBase.java      classe abstrata do professor, preservada
+│   │   ├── NoArvore.java               nó: valor, esquerda, direita e altura
+│   │   ├── ArvoreBinaria.java          árvore binária de busca (sem balanceamento)
+│   │   └── ArvoreAVL.java              AVL: herda da anterior e rebalanceia
+│   └── app/
+│       ├── Contato.java                classe de domínio (nome, telefone)
 │       ├── ComparadorContatoPorNome.java
 │       ├── ComparadorContatoPorTelefone.java
-│       ├── Programa.java             agenda com o menu interativo
-│       ├── GeradorArquivo.java       gera arquivos de entrada aleatórios
-│       ├── Benchmark.java            uma rodada da análise empírica (tempos)
-│       ├── ComparadorContador.java   decorator que conta chamadas ao comparador
-│       └── ContagemOperacoes.java    conta comparações em vez de medir tempo
-├── analise/
-│   ├── gerar_graficos.py             gráficos do relatório (matplotlib)
-│   ├── gerar_relatorio.py            monta o PDF do relatório (ReportLab)
-│   └── figuras/                      PNGs gerados
-├── dados/                            arquivos de entrada e medições (CSV)
-└── relatorio/Relatorio_Trabalho1.pdf
+│       ├── Programa.java               agenda: lista não-ordenada, ordenada ou árvore
+│       ├── GeradorArquivo.java         gera entradas crescente/balanceada/aleatória
+│       ├── Benchmark.java              uma rodada de medição de tempo (CSV)
+│       ├── ComparadorContador.java     decorator que conta comparações
+│       ├── ContagemOperacoes.java      conta comparações em vez de medir tempo
+│       ├── TesteArvore.java            testes da árvore binária
+│       └── TesteAVL.java               testes da AVL (rotações e propriedade AVL)
+├── analise/                            scripts dos gráficos e do PDF
+├── dados/                              arquivos de entrada e CSVs das medições
+├── medir.ps1                           script PowerShell que roda todas as medições
+└── relatorio/Relatorio_Trabalho2.pdf    relatório completo (seções 1 a 6)
 ```
 
-Separação de responsabilidades: **nenhuma classe do pacote `colecao` imprime
-mensagens**. Toda interação com o usuário está em `app.Programa`.
-
-## 2. A biblioteca
-
-`ListaEncadeada<T> implements IColecao<T>, Iterable<T>`
-
-Construtor:
+## 2. A biblioteca de árvores
 
 ```java
-new ListaEncadeada<>(Comparator<T> comparador, boolean ordenada)
+ArvoreBinaria<Contato> arvore = new ArvoreBinaria<>(new ComparadorContatoPorNome());
 ```
 
-* `comparador` — usado sempre que for preciso comparar elementos (inserção
-  ordenada, pesquisa e remoção);
-* `ordenada` — `true` mantém a lista ordenada a cada inserção; `false` insere
-  sempre no fim (atributo `final`, definido na criação).
+`ArvoreBinaria<T> extends ArvoreBinariaBase<T>`, que por sua vez implementa
+`IColecao<T>`. O comparador é recebido no construtor (atributo `comparador`,
+herdado da classe base), o que permite criar várias árvores do mesmo tipo
+indexadas por critérios diferentes.
 
 Métodos da interface: `adicionar`, `pesquisar`, `remover`, `quantidadeNos`.
-Além deles, `toString()` devolve `[elem1,elem2,...]` e `iterator()` permite
-percorrer a lista com `for-each`.
+Métodos exigidos pela classe base: `altura`, `caminharEmNivel`, `caminharEmOrdem`
+(e `toString`, herdado, devolve o caminhamento em ordem).
+Método auxiliar da análise empírica: `valorDaFolhaMaisProfunda()`.
 
-Atributos internos: `prim`, `ult` (referência para o último nó, que torna a
-inserção no fim O(1)) e `quant` (contador que torna `quantidadeNos()` O(1)).
+**Decisões de implementação**
+
+* **Na árvore binária, todos os percursos são iterativos, não recursivos.** Uma árvore degenerada
+  com 200.000 nós tem altura 199.999; uma implementação recursiva estouraria a
+  pilha da JVM (`StackOverflowError`). A inserção, a busca e a remoção descem com
+  laços; `altura` e `caminharEmNivel` usam uma fila; `caminharEmOrdem` usa uma
+  pilha explícita.
+* **Elementos de chave igual são inseridos à direita**, mesma convenção dos
+  exemplos em C vistos em aula.
+* **Remoção de nó com dois filhos pelo predecessor** (o maior elemento da
+  subárvore esquerda), também como no exemplo da disciplina.
+* **Contador de nós** mantido na inserção e na remoção, para que
+  `quantidadeNos()` seja O(1).
+* **Na AVL, inserção e remoção são recursivas**, no estilo das funções
+  `inserirV2`/`removerV2` vistas em aula: cada chamada devolve a nova raiz da
+  subárvore. É seguro porque a AVL garante altura O(log n) (cerca de 25 níveis
+  para 200.000 elementos). O fator de balanceamento é derivado da altura
+  guardada em cada nó.
 
 ## 3. A agenda (`app.Programa`)
 
-Ao iniciar, o programa pergunta se as listas devem ser ordenadas e cria
-**duas listas** com as **mesmas instâncias** de `Contato` (não há duplicação de
-objetos): uma indexada por nome e outra por telefone.
-
-Menu:
-
-1. Carregar dados de arquivo — exibe o tempo total de leitura + montagem;
-2. Adicionar contato — recusa telefone já existente (regra de negócio, fora da biblioteca);
-3. Pesquisar por nome — exibe o telefone e o tempo da busca;
-4. Pesquisar por telefone — exibe o nome e o tempo da busca;
-5. Remover por telefone — exibe o resultado e o tempo da remoção;
-6. Alterar dados — remove, altera e reinsere (as chaves das duas listas mudam);
-7. Sair — exibe a quantidade total de contatos.
-
-**Formato do arquivo de entrada** (`entrada.txt`), uma linha por contato:
+Ao iniciar, o programa pergunta qual estrutura usar:
 
 ```
-Ana Ribeiro 240409;27900005056
-Lucas Teixeira 946305;27900023972
+1 - Lista encadeada NAO-ordenada
+2 - Lista encadeada ORDENADA
+3 - Arvore binaria de busca
+4 - Arvore AVL (binaria balanceada)
 ```
 
-Observação sobre homônimos: a lista indexada por nome compara apenas pelo nome,
-então, se houver contatos de mesmo nome, remover "pela chave nome" poderia
-retirar o homônimo errado. O método `removerInstanciaDaListaPorNome` trata isso
-retirando temporariamente os homônimos anteriores ao alvo e reinserindo-os.
+Como todas implementam `IColecao`, **nenhuma outra parte do programa precisou ser
+alterada** em relação ao Trabalho 1. O menu, a carga de arquivo, as buscas, a
+remoção, a alteração e a medição de tempos continuam idênticos.
+
+Formato do arquivo de entrada (uma linha por contato):
+
+```
+Contato 0000007;27900000007
+```
 
 ## 4. Como compilar e executar
 
@@ -97,28 +110,43 @@ Requisito: JDK 17 ou superior (desenvolvido e testado com o OpenJDK 21).
 # compilar
 javac -d build $(find src -name "*.java")
 
+# testes das bibliotecas de árvores
+java -cp build app.TesteArvore
+java -cp build app.TesteAVL
+
 # executar a agenda
 java -cp build app.Programa
 
-# gerar um arquivo de entrada com 100.000 contatos
-java -cp build app.GeradorArquivo 100000 dados/entrada_100000.txt 7
+# gerar arquivos de entrada (modo: crescente | balanceado | aleatorio)
+java -cp build app.GeradorArquivo 100000 dados/cres_100000.txt crescente
+java -cp build app.GeradorArquivo 100000 dados/bal_100000.txt  balanceado
 
-# rodar uma medição (arquivo, lista ordenada?)  -> imprime uma linha CSV
-java -cp build app.Benchmark dados/entrada_100000.txt false
+# medir (estrutura: arvore | avl | lista_nao_ordenada | lista_ordenada)
+java -cp build app.Benchmark dados/bal_100000.txt arvore
+java -cp build app.Benchmark dados/cres_100000.txt avl
 
-# contar comparações em vez de medir tempo
-java -cp build app.ContagemOperacoes dados/entrada_100000.txt true
+# contar comparações em vez de medir tempo (3o argumento "avl" usa a AVL)
+java -cp build app.ContagemOperacoes dados/bal_100000.txt arvore_balanceada
+java -cp build app.ContagemOperacoes dados/cres_100000.txt avl_crescente avl
 
 # gerar os gráficos e o PDF do relatório (requer matplotlib e reportlab)
-python3 analise/gerar_graficos.py dados/resultados.csv analise/figuras
+python3 analise/gerar_graficos.py
 python3 analise/gerar_relatorio.py
 ```
 
 Saída do `Benchmark` (CSV separado por `;`):
 
 ```
-n;ordenada;montagem_ms;busca_tel_ms;busca_nome_ms;remocao_ms;achouTel;achouNome;removeu
+estrutura;n;montagem_ms;altura_tel;altura_nome;busca_tel_ms;busca_nome_ms;remocao_ms;achouTel;achouNome;removeu
 ```
 
-Cada medição é feita em uma **JVM nova**, para que uma execução não interfira na
-seguinte.
+Cada medição roda em uma **JVM nova**, e os números são impressos com
+`Locale.US` para que o separador decimal seja sempre o ponto, independentemente
+do idioma do sistema operacional.
+
+## 5. Relatório
+
+`relatorio/Relatorio_Trabalho2.pdf` — seções 1 (desenvolvimento), 2 (análise
+matemática da árvore binária), 3 (análise empírica da árvore binária),
+4 (análise da AVL), 5 (desempenho da AVL) e 6 (árvores na biblioteca padrão
+de Java).
